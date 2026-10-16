@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberPuppet // Realistic 3D Mecha Robot Controller</title>
+  <meta name="description" content="Real-time 3D humanoid robot puppet controller using Three.js, MediaPipe hand tracking, and dynamic tension string physics." />
+  
+  <!-- Modern Sci-Fi & Clean Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="./src/style.css" />
+
+  <!-- MediaPipe Hands & Camera Utils -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Holographic Cyberpunk HUD Overlay -->
+  <div id="hud-root">
+    
+    <!-- Top Header Bar -->
+    <header class="hud-header glass-card">
+      <div class="brand-block">
+        <div class="brand-logo-icon"></div>
+        <div class="brand-text">
+          <span class="brand-title">CYBERPUPPET</span>
+          <span class="brand-subtitle">MK-IV HYBRID MECHA // THREE.JS ENGINE</span>
+        </div>
+      </div>
+
+      <div class="header-status-group">
+        <div class="status-pill" id="action-badge">
+          <span class="pulse-dot"></span>
+          <span id="active-action-text">MARIONETTE</span>
+        </div>
+        <button id="lock-toggle-btn" class="toggle-pill" title="Toggle Action Continuous Loop">
+          LOCK: <span id="lock-status-val">OFF</span>
+        </button>
+        <div class="fps-counter" id="fps-display">FPS: 60</div>
+      </div>
+    </header>
+
+    <!-- Top-Left Telemetry & Finger Remote Matrix Card -->
+    <aside class="hud-card hud-top-left glass-card">
+      <div class="card-header">
+        <span class="card-title">TENSION BUS METERS</span>
+        <span class="card-badge">60Hz SYNC</span>
+      </div>
+      <div class="tension-bars" id="tension-container">
+        <div class="tension-row">
+          <span class="finger-label">THUMB</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-thumb"></div></div>
+        </div>
+        <div class="tension-row">
+          <span class="finger-label">INDEX</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-index"></div></div>
+        </div>
+        <div class="tension-row">
+          <span class="finger-label">MIDDLE</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-middle"></div></div>
+        </div>
+        <div class="tension-row">
+          <span class="finger-label">RING</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-ring"></div></div>
+        </div>
+        <div class="tension-row">
+          <span class="finger-label">PINKY</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-pinky"></div></div>
+        </div>
+      </div>
+
+      <div class="card-divider"></div>
+
+      <div class="card-header">
+        <span class="card-title">FINGER REMOTE MATRIX</span>
+      </div>
+      <div class="remote-guide-list">
+        <div class="guide-item" data-action="JUMP">
+          <span class="gesture-icon">✌️ PEACE</span>
+          <span class="action-target cyan">→ JUMP LEAP</span>
+        </div>
+        <div class="guide-item" data-action="DANCE">
+          <span class="gesture-icon">🤘 HORNS</span>
+          <span class="action-target magenta">→ BREAKDANCE</span>
+        </div>
+        <div class="guide-item" data-action="RUN">
+          <span class="gesture-icon">✌️ LEGS</span>
+          <span class="action-target blue">→ SPRINT RUN</span>
+        </div>
+        <div class="guide-item" data-action="FIGHT">
+          <span class="gesture-icon">✊ FIST</span>
+          <span class="action-target red">→ 4-HIT COMBO</span>
+        </div>
+        <div class="guide-item" data-action="SLASH">
+          <span class="gesture-icon">☝️ POINT</span>
+          <span class="action-target red">→ BLADE FRENZY</span>
+        </div>
+        <div class="guide-item" data-action="MARIONETTE">
+          <span class="gesture-icon">✋ PALM</span>
+          <span class="action-target green">→ PUPPET REMOTE</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Top-Right Neural Terminal Card -->
+    <aside class="hud-card hud-top-right glass-card">
+      <div class="card-header">
+        <span class="card-title">NEURAL LINK TELEMETRY</span>
+        <span class="status-indicator-live">LIVE</span>
+      </div>
+      <div class="terminal-body" id="terminal-logs">
+        <div class="log-line info">kit@mecha:~$ ./agent --threejs</div>
+        <div class="log-line ok">[OK] Three.js PBR Rendering Engine Initialized</div>
+        <div class="log-line ok">[OK] APEX Crimson War Mecha Loaded</div>
+        <div class="log-line system">KINEMATICS: 24 Articulated Hydraulic Joints + Vibro-Blades</div>
+        <div class="log-line system">PARTICLES: Twin Thrusters + Impact Shockwaves + Slash Arcs</div>
+        <div class="log-line log-dynamic" id="log-status">STATUS: STANDBY // WAITING HAND</div>
+      </div>
+
+      <div class="card-divider"></div>
+
+      <div class="theme-selector-group">
+        <span class="theme-label">MECHA ARMOR COATING:</span>
+        <div class="theme-buttons">
+          <button class="theme-btn active" data-theme="apex" title="Arctic White, Blood Crimson & Dark Obsidian">APEX</button>
+          <button class="theme-btn" data-theme="stealth" title="Carbon Graphite & Crimson">STEALTH</button>
+          <button class="theme-btn" data-theme="pearl" title="Pearl Platinum & Cyber Violet">PEARL</button>
+          <button class="theme-btn" data-theme="solar" title="Titanium Gold & Amber Core">SOLAR</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Bottom-Left Webcam PIP Video & Skeleton Visualizer -->
+    <div class="hud-webcam-pip glass-card" id="webcam-card">
+      <div class="pip-header">
+        <span class="pip-title">CAMERA TELEMETRY</span>
+        <div class="pip-controls">
+          <button id="cam-toggle-btn" class="pip-btn" title="Toggle Webcam On/Off">START CAM</button>
+          <button id="demo-mode-btn" class="pip-btn active" title="Toggle Autonomous Demo Mode">DEMO: ON</button>
+        </div>
+      </div>
+      <div class="pip-preview-wrapper">
+        <video id="webcam-video" playsinline muted></video>
+        <canvas id="hand-canvas"></canvas>
+        <div class="pip-overlay-badge" id="detected-gesture-badge">MODE: AUTO DEMO</div>
+      </div>
+    </div>
+
+    <!-- Bottom Action Dock: Interactive Remote Buttons -->
+    <nav class="hud-action-deck glass-card">
+      <div class="action-buttons-group">
+        <button class="action-btn" id="btn-jump" data-action="JUMP">
+          <span class="btn-icon">⚡</span>
+          <span class="btn-name">JUMP</span>
+          <span class="btn-key">[1]</span>
+        </button>
+        <button class="action-btn" id="btn-dance" data-action="DANCE">
+          <span class="btn-icon">🎵</span>
+          <span class="btn-name">DANCE</span>
+          <span class="btn-key">[2]</span>
+        </button>
+        <button class="action-btn" id="btn-run" data-action="RUN">
+          <span class="btn-icon">💨</span>
+          <span class="btn-name">RUN</span>
+          <span class="btn-key">[3]</span>
+        </button>
+        <button class="action-btn" id="btn-fight" data-action="FIGHT">
+          <span class="btn-icon">🥊</span>
+          <span class="btn-name">FIGHT</span>
+          <span class="btn-key">[4]</span>
+        </button>
+        <button class="action-btn active" id="btn-puppet" data-action="MARIONETTE">
+          <span class="btn-icon">✨</span>
+          <span class="btn-name">PUPPET</span>
+          <span class="btn-key">[5]</span>
+        </button>
+        <button class="action-btn" id="btn-mimic" data-action="MIMIC">
+          <span class="btn-icon">🦾</span>
+          <span class="btn-name">MIMIC</span>
+          <span class="btn-key">[6]</span>
+        </button>
+        <button class="action-btn" id="btn-slash" data-action="SLASH">
+          <span class="btn-icon">⚔️</span>
+          <span class="btn-name">SLASH</span>
+          <span class="btn-key">[7]</span>
+        </button>
+      </div>
+
+      <div class="deck-separator"></div>
+
+      <!-- Camera View & Wireframe Controls -->
+      <div class="deck-view-group">
+        <button class="view-btn active" data-view="front">FRONT</button>
+        <button class="view-btn" data-view="action">ACTION</button>
+        <button class="view-btn" data-view="close">CLOSEUP</button>
+        <button class="view-btn" id="wireframe-toggle-btn">WIREFRAME</button>
+        <button class="view-btn" id="reset-pose-btn">RESET</button>
+      </div>
+    </nav>
+
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

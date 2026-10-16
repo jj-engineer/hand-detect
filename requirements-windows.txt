@@ -1,0 +1,21 @@
+# TITAN-9 - pinned dependency set for Windows (64-bit Python 3.9 - 3.12).
+# Installed automatically by START_WINDOWS.bat. macOS/Linux keep using requirements.txt.
+#
+# Versions match the stack that runs on the developer's Mac (so behaviour is the same), except:
+#  * numpy 1.26.4 + opencv-contrib-python 4.10: the widely used, stable Windows combination for mediapipe 0.10.14.
+#    Only ONE OpenCV package is installed - mediapipe already depends on opencv-contrib-python, and adding plain
+#    opencv-python next to it makes two packages fight over the same "cv2" module.
+#  * mediapipe 0.10.14 has Windows wheels only for CPython 3.9-3.12 (win_amd64): Python 3.13+ will NOT work.
+#  * matplotlib / jax / jaxlib are required by mediapipe's own metadata ("import mediapipe" imports matplotlib at load
+#    time); they are pinned so pip does not backtrack into an untested combination.
+mediapipe==0.10.14
+opencv-contrib-python==4.10.0.84
+numpy==1.26.4
+scipy==1.13.1
+matplotlib==3.9.4
+jax==0.4.30
+jaxlib==0.4.30
+moderngl==5.13.0
+glfw==2.10.2
+Pillow==11.3.0
+sounddevice==0.5.6
